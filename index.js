@@ -1,6 +1,8 @@
 import express from 'express';
 import { MongoClient, ObjectId } from 'mongodb';
 import moment from 'moment-timezone';
+import { someExportedValue } from 'test.js'; // Adjust the import path and name as needed
+import { expect } from 'chai';
 
 const uri = 'mongodb://localhost:27017/trial'; // Your MongoDB URI
 const client = new MongoClient(uri, {});
@@ -30,19 +32,16 @@ async function connectToMongoDB() {
 
 async function addTestPosts(db) {
   const postsCollection = db.collection('posts');
-
+  
   try {
-    const now = moment(); // Current date and time in the specified time zone
-    // Adjust the timestamps as needed
-    const post1Timestamp = now.subtract(7, 'days'); // 7 days ago
-    const post2Timestamp = now.subtract(5, 'days'); // 5 days ago
-    const post3Timestamp = now.subtract(3, 'days'); // 3 days ago
+    const now = new Date(); // Current date and time
+    const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
 
     const testPosts = [
-      { groupId: new ObjectId("651922d65535398850f5dbee") },
-      { groupId: new ObjectId("65191e089ace0b8414606b6a") },
-      { groupId: new ObjectId("6517d51dcbde365d3bfd0b02") },
-      // Add more test posts with different group IDs and timestamps
+      { groupId:new ObjectId("6516eadbb029d404b0c196a4"), createdAt: lastWeek },
+      { groupId:new ObjectId("6516d690f084a3a3da0cf28b"), createdAt: lastWeek },
+      { groupId:new ObjectId("6517d51dcbde365d3bfd0b02"), createdAt: lastWeek },
+      // Add more test posts with different group IDs and recent timestamps
     ];
 
     await postsCollection.insertMany(testPosts);
@@ -81,29 +80,21 @@ async function performCRUDOperations(db) {
 
 async function retrieveMostActiveGroups(db) {
   const postsCollection = db.collection('posts');
-
-  // Adjust the time frame here (e.g., change 7 days to 30 days)
-  const timeFrameInDays = 7; // Change this value as needed
-
-  // Adjust the minimum post count required for a group to be considered active
-  const minPostCount = 5; // Change this value as needed
-
+  
+  // Specify your desired time frame in days
+  const timeFrameInDays = 30; // Change this value to your desired time frame
+  
   // Aggregation pipeline to retrieve most active groups based on recent post counts
   const aggregationPipeline = [
     {
       $match: {
-        createdAt: { $gte: moment().subtract(timeFrameInDays, 'days').toDate() } // Filter posts from the last 'timeFrameInDays' days
+        createdAt: { $gte: new Date(Date.now() - timeFrameInDays * 24 * 60 * 60 * 1000) } // Filter posts from the last 'timeFrameInDays' days
       }
     },
     {
       $group: {
         _id: '$groupId',
         totalRecentPosts: { $sum: 1 }
-      }
-    },
-    {
-      $match: {
-        totalRecentPosts: { $gte: minPostCount } // Filter groups with at least 'minPostCount' posts
       }
     },
     {
@@ -130,16 +121,13 @@ async function retrieveMostActiveGroups(db) {
 
   try {
     const activeGroups = await postsCollection.aggregate(aggregationPipeline).toArray();
-    console.log('Intermediate Result:', activeGroups); // Log intermediate result
-    if (activeGroups.length === 0) {
-      console.log('No active groups found within the specified criteria.');
-    } else {
-      console.log('Most active groups:', activeGroups);
-    }
+    console.log('Most active groups based on the new criteria:', activeGroups);
   } catch (err) {
     console.error('Error retrieving most active groups:', err);
   }
 }
+
+
 
 connectToMongoDB();
 
@@ -177,6 +165,8 @@ app.get('/api/posts', async (req, res) => {
 const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+console.log('Imported value from test.js:', someExportedValue);
 
 // Handle server shutdown
 process.on('SIGINT', () => {
