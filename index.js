@@ -1,8 +1,6 @@
 import express from 'express';
 import { MongoClient, ObjectId } from 'mongodb';
 import moment from 'moment-timezone';
-import { someExportedValue } from 'test.js'; // Adjust the import path and name as needed
-import { expect } from 'chai';
 
 const uri = 'mongodb://localhost:27017/trial'; // Your MongoDB URI
 const client = new MongoClient(uri, {});
@@ -166,8 +164,6 @@ const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-console.log('Imported value from test.js:', someExportedValue);
-
 // Handle server shutdown
 process.on('SIGINT', () => {
   closeMongoDBConnection().finally(() => {
@@ -178,9 +174,3 @@ process.on('SIGINT', () => {
     });
   });
 });
-
-export async function closeMongoDBConnection() {
-  if (client.isConnected()) {
-    return client.close();
-  }
-}
